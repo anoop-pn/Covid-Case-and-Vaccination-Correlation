@@ -108,6 +108,7 @@ public class App {
         }
 
         for (String county : distinctCounties) {
+            System.out.println("Age Correlation for county: " + county);
             Dataset<Row> vaccineAgeDF = df2.filter("demographic_category == 'Age Group'")
                     .filter("county =='" + county + "'")
                     .select("county", "cumulative_fully_vaccinated", "administered_date", "administered_month",
@@ -179,6 +180,7 @@ public class App {
         HashMap<String, List<List<String>>> lineChartMapRace = new HashMap<>();
 
         for (String county : distinctCounties) {
+            System.out.println("RACE Correlation for county: " + county);
             Dataset<Row> vaccineRaceDF = df2.filter("demographic_category == 'Race/Ethnicity'")
                     .filter("county =='" + county + "'")
                     .select("county", "cumulative_fully_vaccinated", "administered_date", "administered_month",
