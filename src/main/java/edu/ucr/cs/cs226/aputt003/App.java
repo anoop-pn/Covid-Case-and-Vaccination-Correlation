@@ -23,49 +23,6 @@ import static org.apache.spark.sql.functions.*;
  */
 public class App {
 
-    public class Vaccine implements Serializable {
-        String county;
-        String countyType;
-        String demographicCategory;
-        String demographicValue;
-        String estPopulation;
-        String estAge12Plus;
-        String estAge5Plus;
-        String administeredDate;
-        String partiallyVaccinated;
-        String totalPartiallyVaccinated;
-        String fullyVaccinated;
-        String cumulativeFullyVaccinated;
-        String atleastOneDose;
-        String cumulativeAtleastOneDose;
-        String cumulativeUnvaxTotal;
-        String cumulativeUnvax12Plus;
-        String cumulativeUnvax5Plus;
-        String suppressData;
-    }
-
-    public class CovidCase implements Serializable {
-        String caseMonth;
-        String resState;
-        String stateFipsCode;
-        String resCounty;
-        String countyFipsCode;
-        String ageGroup;
-        String sex;
-        String race;
-        String ethinicity;
-        String casePositiveInterval;
-        String caseOnsetInterval;
-        String process;
-        String exposure;
-        String currentStatus;
-        String symptomStatus;
-        String hospital;
-        String icu;
-        String death;
-        String underlyingConditions;
-    }
-
     public static void main(String[] args) throws IOException {
         SparkConf conf = new SparkConf().setAppName("test").setMaster("local").set("spark.testing.memory",
                 "2147480000");
@@ -76,6 +33,8 @@ public class App {
                 .appName("test")
                 .getOrCreate();
         // spark.sparkContext().setLogLevel("ERROR");
+
+        Correlation correlation = new Correlation();
         StructType schema1 = new StructType()
                 .add("case_month", "string")
                 .add("res_state", "string")
@@ -126,14 +85,6 @@ public class App {
                 .option("mode", "DROPMALFORMED")
                 .schema(schema2)
                 .csv("vaccine_data_dec9_cleaned_3.csv");
-        // ArrayList<String> ageGroups = new ArrayList();
-        // ageGroups.add("18-49");
-        // ArrayList<String> counties = new ArrayList();
-        // counties.add("ALAMEDA");
-        // ArrayList<String> lastDayOfMonth = new ArrayList();
-        // lastDayOfMonth.add("2021-10-31");
-        // ArrayList<String> months = new ArrayList();
-        // months.add("2021-10");
 
         List<String> validDates = new ArrayList<String>(Arrays.asList("2020-07-31",
                 "2020-08-31",
@@ -162,14 +113,10 @@ public class App {
         for (Row r : countyList) {
             distinctCounties.add(r.getString(0));
         }
-        Set<String> distinctCountiesDummy = new HashSet<>();
-        distinctCountiesDummy.add("RIVERSIDE");
-        distinctCountiesDummy.add("ALAMEDA");
-        distinctCountiesDummy.add("SAN DIEGO");
 
-        for (String counte : distinctCountiesDummy) {
+        for (String county : distinctCounties) {
             Dataset<Row> vaccineAgeDF = df2.filter("demographic_category == 'Age Group'")
-                    .filter("county =='" + counte + "'")
+                    .filter("county =='" + county + "'")
                     .select("county", "cumulative_fully_vaccinated", "administered_date", "administered_month",
                             "demographic_category", "demographic_value")
                     .filter(df2.col("administered_date").isInCollection(validDates))
@@ -182,7 +129,7 @@ public class App {
 
             Dataset<Row> caseAgeDF = df1.select("res_county", "case_month", "age_group")
                     .filter("res_state=='CA'")
-                    .filter("res_county =='" + counte + "'")
+                    .filter("res_county =='" + county + "'")
                     .groupBy("res_county", "case_month", "age_group")
                     .count()
                     .sort("case_month")
@@ -223,14 +170,14 @@ public class App {
                     el.remove(1);
                     mapList.add(el);
                 }
-                lineChartMapAge.put(counte + "_" + s, mapList);
+                lineChartMapAge.put(county + "_" + s, mapList);
             }
             System.out.println("lineChart HAshMAP:   " + lineChartMapAge.toString());
             for (HashMap.Entry<String, List<List<String>>> e : lineChartMapAge.entrySet()) {
                 LineChart lineChart = new LineChart(e.getKey().split("_")[0], e.getKey(), e.getValue());
                 System.out.println(e.getKey());
-                System.out.println("Correlation_Co-Efficients age wise For: " + counte);
-                calcCoeff(joinedAgeDF);
+                System.out.println("Correlation_Co-Efficients age wise For: " + county);
+                correlation.computeCorrelation(joinedAgeDF);
             }
             lineChartMapAge.clear();
         }
@@ -238,9 +185,9 @@ public class App {
         // ---------------------------------------------------------RACE---------------------------------------
         HashMap<String, List<List<String>>> lineChartMapRace = new HashMap<>();
 
-        for (String counte : distinctCountiesDummy) {
+        for (String county : distinctCountiesDummy) {
             Dataset<Row> vaccineRaceDF = df2.filter("demographic_category == 'Race/Ethnicity'")
-                    .filter("county =='" + counte + "'")
+                    .filter("county =='" + county + "'")
                     .select("county", "cumulative_fully_vaccinated", "administered_date", "administered_month",
                             "demographic_category", "demographic_value")
                     .filter(df2.col("administered_date").isInCollection(validDates))
@@ -256,7 +203,7 @@ public class App {
 
             Dataset<Row> caseRaceDF = df1.select("res_county", "case_month", "race")
                     .filter("res_state=='CA'")
-                    .filter("res_county =='" + counte + "'")
+                    .filter("res_county =='" + county + "'")
                     .groupBy("res_county", "case_month", "race")
                     .count()
                     .sort("case_month")
@@ -301,51 +248,19 @@ public class App {
                     el.remove(1);
                     mapList.add(el);
                 }
-                lineChartMapRace.put(counte + "_" + s, mapList);
+                lineChartMapRace.put(county + "_" + s, mapList);
             }
             System.out.println("lineChart HAshMAP:   " + lineChartMapRace.toString());
             for (HashMap.Entry<String, List<List<String>>> e : lineChartMapRace.entrySet()) {
-                LineChart lineChart = new LineChart(counte, e.getKey(), e.getValue());
+                LineChart lineChart = new LineChart(county, e.getKey(), e.getValue());
                 System.out.println(e.getKey());
             }
             lineChartMapRace.clear();
-            System.out.println("Correlation_Co-Efficients race wiseFor: " + counte);
-            calcCoeff(joinedRaceDF);
+            System.out.println("Correlation_Co-Efficients race wiseFor: " + county);
+            correlation.computeCorrelation(joinedRaceDF);
         }
     }
 
-    private static void calcCoeff(Dataset<Row> joinedDF) {
-        List<Row> l1 = joinedDF.select("count").collectAsList();
-        List<Row> l2 = joinedDF.select("cumulative_fully_vaccinated").collectAsList();
-        List<Double> ll1 = new ArrayList<>();
-        for (Row r : l1) {
-            ll1.add((double) r.getLong(0));
-        }
-        System.out.println("l1 size: " + l1.size());
-        System.out.println("ll1 size: " + ll1.size());
-        List<Double> ll2 = new ArrayList<>();
-        for (Row r : l2) {
-            ll2.add(Double.parseDouble(r.getString(0)));
-        }
-        System.out.println("l2 size: " + l2.size());
-        System.out.println("ll2 size: " + ll2.size());
-
-        double[] ld1 = ll1.stream().mapToDouble(Double::doubleValue).toArray();
-        double[] ld2 = ll2.stream().mapToDouble(Double::doubleValue).toArray();
-
-        System.out.println("ld1 size: " + ld1.length);
-        System.out.println("ld2 size: " + ld2.length);
-
-        for (int i = 1; i < ld1.length; i++) {
-            ld1[i] += ld1[i - 1];
-        }
-
-        Double coef = new PearsonsCorrelation().correlation(ld1, ld2);
-        System.out.println("Correlation Pearson: " + coef);
-
-        Double spearman = new SpearmansCorrelation().correlation(ld1, ld2);
-        System.out.println("Correlation Spearman: " + spearman);
-    }
 }
 // TODO
 // Describe Chart
