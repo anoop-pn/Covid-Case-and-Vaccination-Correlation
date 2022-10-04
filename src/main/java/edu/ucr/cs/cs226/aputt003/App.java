@@ -185,7 +185,7 @@ public class App {
         // ---------------------------------------------------------RACE---------------------------------------
         HashMap<String, List<List<String>>> lineChartMapRace = new HashMap<>();
 
-        for (String county : distinctCountiesDummy) {
+        for (String county : distinctCounties) {
             Dataset<Row> vaccineRaceDF = df2.filter("demographic_category == 'Race/Ethnicity'")
                     .filter("county =='" + county + "'")
                     .select("county", "cumulative_fully_vaccinated", "administered_date", "administered_month",
@@ -263,10 +263,6 @@ public class App {
 
 }
 // TODO
-// Describe Chart
-// spark-submit build with dependencies and fix it
 // command line arguments for files
-// Correlation Co-Efficient in Report
 // Code Refactor
-// Replace distinctCountiesDummy with distinctCounties before submitting
 // ReadMe file for the project with clear instructions
