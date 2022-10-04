@@ -1,19 +1,12 @@
 package edu.ucr.cs.cs226.aputt003;
 
-import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
-import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.*;
 import org.apache.spark.sql.types.StructType;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import org.apache.log4j.Logger;
-import org.apache.log4j.Level;
-import org.mortbay.log.Log;
 
 import static org.apache.spark.sql.functions.*;
 
